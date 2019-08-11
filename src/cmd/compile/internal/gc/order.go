@@ -993,6 +993,7 @@ func (o *Order) expr(n, lhs *Node) *Node {
 		n.Right = o.expr(n.Right, nil)
 		o.exprList(n.List)
 		o.exprList(n.Rlist)
+		o.exprList(n.Tags)
 
 	// Addition of strings turns into a function call.
 	// Allocate a temporary to hold the strings.

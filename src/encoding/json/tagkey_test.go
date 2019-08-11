@@ -17,7 +17,7 @@ type basicLatin3xTag struct {
 }
 
 type basicLatin4xTag struct {
-	V string `json:"ABCDEFGHIJKLMO"`
+	V string `json:"ABCDEFGHIJKLMO"` [Tag{Name:"ABCDEFGHIJKLMO"}]
 }
 
 type basicLatin5xTag struct {

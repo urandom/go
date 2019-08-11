@@ -75,6 +75,9 @@ func Walk(v Visitor, node Node) {
 		if n.Tag != nil {
 			Walk(v, n.Tag)
 		}
+		for i := range n.TypedTags {
+			Walk(v, n.TypedTags[i])
+		}
 		if n.Comment != nil {
 			Walk(v, n.Comment)
 		}

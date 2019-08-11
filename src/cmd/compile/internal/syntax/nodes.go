@@ -253,8 +253,9 @@ type (
 
 	// struct { FieldList[0] TagList[0]; FieldList[1] TagList[1]; ... }
 	StructType struct {
-		FieldList []*Field
-		TagList   []*BasicLit // i >= len(TagList) || TagList[i] == nil means no tag for field i
+		FieldList    []*Field
+		TagList      []*BasicLit // i >= len(TagList) || TagList[i] == nil means no tag for field i
+		TypedTagList []Expr // i >= len(TypedTagList) || TypedTagList[i] == nil means no typed tags for field i
 		expr
 	}
 

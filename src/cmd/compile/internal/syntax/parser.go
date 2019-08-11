@@ -1303,12 +1303,19 @@ func (p *parser) funcResult() []*Field {
 	return nil
 }
 
-func (p *parser) addField(styp *StructType, pos Pos, name *Name, typ Expr, tag *BasicLit) {
+func (p *parser) addField(styp *StructType, pos Pos, name *Name, typ Expr, tag *BasicLit, typedTag Expr) {
 	if tag != nil {
 		for i := len(styp.FieldList) - len(styp.TagList); i > 0; i-- {
 			styp.TagList = append(styp.TagList, nil)
 		}
 		styp.TagList = append(styp.TagList, tag)
+	}
+
+	if typedTag != nil {
+		for i := len(styp.FieldList) - len(styp.TypedTagList); i > 0; i-- {
+			styp.TypedTagList = append(styp.TypedTagList, nil)
+		}
+		styp.TypedTagList = append(styp.TypedTagList, typedTag)
 	}
 
 	f := new(Field)
@@ -1322,7 +1329,7 @@ func (p *parser) addField(styp *StructType, pos Pos, name *Name, typ Expr, tag *
 	}
 }
 
-// FieldDecl      = (IdentifierList Type | AnonymousField) [ Tag ] .
+// FieldDecl      = (IdentifierList Type | AnonymousField) [ Tag ] [ '[' ExpressionList ']' ] .
 // AnonymousField = [ "*" ] TypeName .
 // Tag            = string_lit .
 func (p *parser) fieldDecl(styp *StructType) {
@@ -1338,7 +1345,8 @@ func (p *parser) fieldDecl(styp *StructType) {
 			// embed oliteral
 			typ := p.qualifiedName(name)
 			tag := p.oliteral()
-			p.addField(styp, pos, nil, typ, tag)
+			typedTag := p.typedTag()
+			p.addField(styp, pos, nil, typ, tag, typedTag)
 			return
 		}
 
@@ -1346,9 +1354,10 @@ func (p *parser) fieldDecl(styp *StructType) {
 		names := p.nameList(name)
 		typ := p.type_()
 		tag := p.oliteral()
+		typedTag := p.typedTag()
 
 		for _, name := range names {
-			p.addField(styp, name.Pos(), name, typ, tag)
+			p.addField(styp, name.Pos(), name, typ, tag, typedTag)
 		}
 
 	case _Lparen:
@@ -1360,7 +1369,8 @@ func (p *parser) fieldDecl(styp *StructType) {
 			typ := newIndirect(pos, p.qualifiedName(nil))
 			p.want(_Rparen)
 			tag := p.oliteral()
-			p.addField(styp, pos, nil, typ, tag)
+			typedTag := p.typedTag()
+			p.addField(styp, pos, nil, typ, tag, typedTag)
 			p.syntaxError("cannot parenthesize embedded type")
 
 		} else {
@@ -1368,7 +1378,8 @@ func (p *parser) fieldDecl(styp *StructType) {
 			typ := p.qualifiedName(nil)
 			p.want(_Rparen)
 			tag := p.oliteral()
-			p.addField(styp, pos, nil, typ, tag)
+			typedTag := p.typedTag()
+			p.addField(styp, pos, nil, typ, tag, typedTag)
 			p.syntaxError("cannot parenthesize embedded type")
 		}
 
@@ -1379,20 +1390,40 @@ func (p *parser) fieldDecl(styp *StructType) {
 			typ := newIndirect(pos, p.qualifiedName(nil))
 			p.want(_Rparen)
 			tag := p.oliteral()
-			p.addField(styp, pos, nil, typ, tag)
+			typedTag := p.typedTag()
+			p.addField(styp, pos, nil, typ, tag, typedTag)
 			p.syntaxError("cannot parenthesize embedded type")
 
 		} else {
 			// '*' embed oliteral
 			typ := newIndirect(pos, p.qualifiedName(nil))
 			tag := p.oliteral()
-			p.addField(styp, pos, nil, typ, tag)
+			typedTag := p.typedTag()
+			p.addField(styp, pos, nil, typ, tag, typedTag)
 		}
 
 	default:
 		p.syntaxError("expecting field name or embedded type")
 		p.advance(_Semi, _Rbrace)
 	}
+}
+
+func (p *parser) typedTag() Expr {
+	if p.tok == _Lbrack {
+		p.next()
+		expr := p.exprList()
+
+		if p.tok == _Rbrack {
+			p.next()
+		} else {
+			p.syntaxError("expecting ]")
+			p.advance(_Semi, _Rbrack)
+		}
+
+		return expr
+	}
+
+	return nil
 }
 
 func (p *parser) oliteral() *BasicLit {

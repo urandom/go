@@ -432,8 +432,11 @@ func (e *Escape) exprSkipInit(k EscHole, n *Node) {
 	default:
 		Fatalf("unexpected expr: %v", n)
 
-	case OLITERAL, OGETG, OCLOSUREVAR, OTYPE:
+	case OLITERAL, OGETG, OCLOSUREVAR:
 		// nop
+
+	case OTYPE:
+		e.discards(n.Tags)
 
 	case ONAME:
 		if n.Class() == PFUNC || n.Class() == PEXTERN {

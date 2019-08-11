@@ -719,6 +719,15 @@ func (check *Checker) structType(styp *Struct, e *ast.StructType) {
 	for _, f := range list.List {
 		typ = check.typ(f.Type)
 		tag = check.tag(f.Tag)
+		for i := range f.TypedTags {
+			var o operand
+			check.expr(&o, f.TypedTags[i])
+			if o.mode != constant_ && o.mode != variable && o.mode != value {
+				if o.mode != invalid {
+					check.errorf(o.pos(), "typed tag %s must be a constant, variable or value", &o)
+				}
+			}
+		}
 		if len(f.Names) > 0 {
 			// named fields
 			for _, name := range f.Names {

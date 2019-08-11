@@ -545,6 +545,7 @@ func (r *importReader) typ1() *types.Type {
 			typ := r.typ()
 			emb := r.bool()
 			note := r.string()
+			tags := r.exprList()
 
 			f := types.NewField()
 			f.Pos = pos
@@ -554,6 +555,12 @@ func (r *importReader) typ1() *types.Type {
 				f.Embedded = 1
 			}
 			f.Note = note
+			if len(tags) > 0 {
+				f.Tags = make([]*types.Node, len(tags))
+				for i := range tags {
+					f.Tags[i] = asTypesNode(tags[i])
+				}
+			}
 			fs[i] = f
 		}
 

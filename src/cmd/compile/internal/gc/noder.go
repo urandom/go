@@ -822,6 +822,10 @@ func (p *noder) structType(expr *syntax.StructType) *Node {
 		} else {
 			n = p.nodSym(field, ODCLFIELD, p.typeExpr(field.Type), p.name(field.Name))
 		}
+		if i < len(expr.TypedTagList) && expr.TypedTagList[i] != nil {
+			tags := p.exprList(expr.TypedTagList[i])
+			n.Tags.Set(tags)
+		}
 		if i < len(expr.TagList) && expr.TagList[i] != nil {
 			n.SetVal(p.basicLit(expr.TagList[i]))
 		}

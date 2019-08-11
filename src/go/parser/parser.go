@@ -733,9 +733,21 @@ func (p *parser) parseFieldDecl(scope *ast.Scope) *ast.Field {
 		p.next()
 	}
 
+	var typedTags []ast.Expr
+	if p.tok == token.LBRACK {
+		p.next()
+		typedTags = p.parseExprList(false)
+
+		if p.tok == token.RBRACK {
+			p.next()
+		} else {
+			p.errorExpected(p.pos, "']'")
+		}
+	}
+
 	p.expectSemi() // call before accessing p.linecomment
 
-	field := &ast.Field{Doc: doc, Names: idents, Type: typ, Tag: tag, Comment: p.lineComment}
+	field := &ast.Field{Doc: doc, Names: idents, Type: typ, Tag: tag, TypedTags: typedTags, Comment: p.lineComment}
 	p.declare(field, nil, scope, ast.Var, idents...)
 	p.resolve(typ)
 

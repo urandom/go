@@ -8,6 +8,11 @@ import (
 	"strings"
 )
 
+type Tag struct {
+	Name      string
+	OmitEmpty bool
+}
+
 // tagOptions is the string following a comma in a struct field's "json"
 // tag, or the empty string. It does not include the leading comma.
 type tagOptions string

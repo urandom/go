@@ -561,6 +561,16 @@ func structfield(n *Node) *types.Field {
 		f.Embedded = 0
 	}
 
+	tagsSlice := n.Tags.Slice()
+	typecheckslice(tagsSlice, ctxExpr)
+	for i := range tagsSlice {
+		if tagsSlice[i].Type == nil {
+			f.SetBroke(true)
+		}
+		f.Tags = append(f.Tags, asTypesNode(tagsSlice[i]))
+	}
+	n.Tags = Nodes{}
+
 	switch u := n.Val().U.(type) {
 	case string:
 		f.Note = u

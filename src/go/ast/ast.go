@@ -155,11 +155,12 @@ func (g *CommentGroup) Text() string {
 // and embedded struct fields. In the latter case, the field name is the type name.
 //
 type Field struct {
-	Doc     *CommentGroup // associated documentation; or nil
-	Names   []*Ident      // field/method/parameter names; or nil
-	Type    Expr          // field/method/parameter type
-	Tag     *BasicLit     // field tag; or nil
-	Comment *CommentGroup // line comments; or nil
+	Doc       *CommentGroup // associated documentation; or nil
+	Names     []*Ident      // field/method/parameter names; or nil
+	Type      Expr          // field/method/parameter type
+	Tag       *BasicLit     // field tag; or nil
+	TypedTags []Expr        //field typed tags; or nil
+	Comment   *CommentGroup // line comments; or nil
 }
 
 func (f *Field) Pos() token.Pos {
@@ -170,6 +171,9 @@ func (f *Field) Pos() token.Pos {
 }
 
 func (f *Field) End() token.Pos {
+	if len(f.TypedTags) > 0 {
+		return f.TypedTags[len(f.TypedTags)-1].End()
+	}
 	if f.Tag != nil {
 		return f.Tag.End()
 	}

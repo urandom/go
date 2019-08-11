@@ -28,6 +28,7 @@ type Node struct {
 	Nbody Nodes
 	List  Nodes
 	Rlist Nodes
+	Tags  Nodes
 
 	// most nodes
 	Type *types.Type

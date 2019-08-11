@@ -1720,8 +1720,22 @@ func fldconv(f *types.Field, flag FmtFlag, mode fmtMode, depth int, funarg types
 		str = name + " " + typ
 	}
 
-	if flag&FmtShort == 0 && funarg == types.FunargNone && f.Note != "" {
-		str += " " + strconv.Quote(f.Note)
+	if flag&FmtShort == 0 && funarg == types.FunargNone {
+		if f.Note != "" {
+			str += " " + strconv.Quote(f.Note)
+		}
+
+		if len(f.Tags) > 0 {
+			nodes := make([]*Node, len(f.Tags))
+			for i := range f.Tags {
+				nodes[i] = asNode(f.Tags[i])
+			}
+
+			tags := asNodes(nodes)
+			if tags.Len() > 0 {
+				str += fmt.Sprintf(" [%.v]", tags)
+			}
+		}
 	}
 
 	return str

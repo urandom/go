@@ -74,8 +74,18 @@ func identical(t1, t2 *Type, cmpTags bool, assumedEqual map[typePair]struct{}) b
 			if f1.Sym != f2.Sym || f1.Embedded != f2.Embedded || !identical(f1.Type, f2.Type, cmpTags, assumedEqual) {
 				return false
 			}
-			if cmpTags && f1.Note != f2.Note {
-				return false
+			if cmpTags {
+				if f1.Note != f2.Note {
+					return false
+				}
+				if len(f1.Tags) != len(f2.Tags) {
+					return false
+				}
+				for i := range f1.Tags {
+					if f1.Tags[i] != f2.Tags[i] {
+						return false
+					}
+				}
 			}
 		}
 		return true

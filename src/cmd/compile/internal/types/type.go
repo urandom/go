@@ -368,6 +368,8 @@ type Field struct {
 	// to the associated ONAME Node.
 	Nname *Node
 
+	Tags []*Node
+
 	// Offset in bytes of this field or method within its enclosing struct
 	// or interface Type.
 	Offset int64

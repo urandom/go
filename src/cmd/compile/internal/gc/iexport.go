@@ -213,7 +213,8 @@ import (
 
 // Current indexed export format version. Increase with each format change.
 // 0: Go1.11 encoding
-const iexportVersion = 0
+// 1: Go1.1x typed tags
+const iexportVersion = 1
 
 // predeclReserved is the number of type offsets reserved for types
 // implicitly declared in the universe block.
@@ -655,6 +656,10 @@ func (w *exportWriter) doTyp(t *types.Type) {
 			w.typ(f.Type)
 			w.bool(f.Embedded != 0)
 			w.string(f.Note)
+			for i := range f.Tags {
+				w.expr(asNode(f.Tags[i]))
+			}
+			w.op(OEND)
 		}
 
 	case TINTER:

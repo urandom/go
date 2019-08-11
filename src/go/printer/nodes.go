@@ -520,6 +520,12 @@ func (p *printer) fieldList(fields *ast.FieldList, isStruct, isIncomplete bool) 
 				p.expr(f.Tag)
 				extraTabs = 0
 			}
+			if len(f.TypedTags) > 0 {
+				p.print(sep)
+				p.print(token.LBRACK)
+				p.exprList(token.NoPos, f.TypedTags, 1, 0, token.NoPos, false)
+				p.print(token.RBRACK)
+			}
 			if f.Comment != nil {
 				for ; extraTabs > 0; extraTabs-- {
 					p.print(sep)
