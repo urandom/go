@@ -1501,18 +1501,24 @@ func typecheck1(n *Node, top int) (res *Node) {
 		n.Type = t
 
 	case OCLOSE:
-		if !onearg(n, "%v", n.Op) {
+		args := n.List
+		if args.Len() == 0 {
+			yyerror("missing argument to close")
 			n.Type = nil
 			return n
 		}
-		n.Left = typecheck(n.Left, ctxExpr)
-		n.Left = defaultlit(n.Left, nil)
-		l := n.Left
+		n.List.Set(nil)
+		l := args.First()
+		l = typecheck(l, ctxExpr)
+		l = defaultlit(l, nil)
+		n.Left = l
+
 		t := l.Type
 		if t == nil {
 			n.Type = nil
 			return n
 		}
+
 		if !t.IsChan() {
 			yyerror("invalid operation: %v (non-chan type %v)", n, t)
 			n.Type = nil
@@ -1521,6 +1527,16 @@ func typecheck1(n *Node, top int) (res *Node) {
 
 		if !t.ChanDir().CanSend() {
 			yyerror("invalid operation: %v (cannot close receive-only channel)", n)
+			n.Type = nil
+			return n
+		}
+
+		if args.Len() == 2 {
+			n.Right = assignconv(typecheck(args.Second(), ctxExpr), t.Elem(), "close")
+		}
+
+		if args.Len() > 2 {
+			yyerror("too many arguments to append")
 			n.Type = nil
 			return n
 		}

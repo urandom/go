@@ -30,16 +30,17 @@ const (
 )
 
 type hchan struct {
-	qcount   uint           // total data in the queue
-	dataqsiz uint           // size of the circular queue
-	buf      unsafe.Pointer // points to an array of dataqsiz elements
-	elemsize uint16
-	closed   uint32
-	elemtype *_type // element type
-	sendx    uint   // send index
-	recvx    uint   // receive index
-	recvq    waitq  // list of recv waiters
-	sendq    waitq  // list of send waiters
+	qcount    uint           // total data in the queue
+	dataqsiz  uint           // size of the circular queue
+	buf       unsafe.Pointer // points to an array of dataqsiz elements
+	elemsize  uint16
+	closed    uint32
+	elemtype  *_type // element type
+	sendx     uint   // send index
+	recvx     uint   // receive index
+	recvq     waitq  // list of recv waiters
+	sendq     waitq  // list of send waiters
+	closedata unsafe.Pointer
 
 	// lock protects all fields in hchan, as well as several
 	// fields in sudogs blocked on this channel.
@@ -350,6 +351,10 @@ func recvDirect(t *_type, sg *sudog, dst unsafe.Pointer) {
 }
 
 func closechan(c *hchan) {
+	closechanwith(c, nil)
+}
+
+func closechanwith(c *hchan, elem unsafe.Pointer) {
 	if c == nil {
 		panic(plainError("close of nil channel"))
 	}
@@ -362,11 +367,12 @@ func closechan(c *hchan) {
 
 	if raceenabled {
 		callerpc := getcallerpc()
-		racewritepc(c.raceaddr(), callerpc, funcPC(closechan))
+		racewritepc(c.raceaddr(), callerpc, funcPC(closechanwith))
 		racerelease(c.raceaddr())
 	}
 
 	c.closed = 1
+	c.closedata = elem
 
 	var glist gList
 
@@ -377,7 +383,11 @@ func closechan(c *hchan) {
 			break
 		}
 		if sg.elem != nil {
-			typedmemclr(c.elemtype, sg.elem)
+			if elem == nil {
+				typedmemclr(c.elemtype, sg.elem)
+			} else {
+				typedmemmove(c.elemtype, sg.elem, c.closedata)
+			}
 			sg.elem = nil
 		}
 		if sg.releasetime != 0 {
@@ -489,7 +499,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 				raceacquire(c.raceaddr())
 			}
 			if ep != nil {
-				typedmemclr(c.elemtype, ep)
+				if c.closedata == nil {
+					typedmemclr(c.elemtype, ep)
+				} else {
+					typedmemmove(c.elemtype, ep, c.closedata)
+				}
 			}
 			return true, false
 		}
@@ -508,7 +522,11 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		}
 		unlock(&c.lock)
 		if ep != nil {
-			typedmemclr(c.elemtype, ep)
+			if c.closedata == nil {
+				typedmemclr(c.elemtype, ep)
+			} else {
+				typedmemmove(c.elemtype, ep, c.closedata)
+			}
 		}
 		return true, false
 	}
@@ -748,7 +766,7 @@ func reflect_chancap(c *hchan) int {
 
 //go:linkname reflect_chanclose reflect.chanclose
 func reflect_chanclose(c *hchan) {
-	closechan(c)
+	closechanwith(c, nil)
 }
 
 func (q *waitq) enqueue(sgp *sudog) {

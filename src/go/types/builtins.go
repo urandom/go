@@ -188,6 +188,7 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 
 	case _Close:
 		// close(c)
+		// close(c chan T, v T)
 		c, _ := x.typ.Underlying().(*Chan)
 		if c == nil {
 			check.invalidArg(x.pos(), "%s is not a channel", x)
@@ -198,9 +199,26 @@ func (check *Checker) builtin(x *operand, call *ast.CallExpr, id builtinId) (_ b
 			return
 		}
 
-		x.mode = novalue
-		if check.Types != nil {
-			check.recordBuiltinType(call.Fun, makeSig(nil, c))
+		min := 1
+		if nargs > min+1 {
+			check.errorf(call.Pos(), "too many arguments for %v (expected %d or %d, found %d)", call, min, min+1, nargs)
+			return
+		}
+
+		if nargs == min+1 {
+			sig := makeSig(nil, c, c.elem)
+			context := check.sprintf("argument to %s", call.Fun)
+			var y operand
+			arg(&y, 1)
+			check.argument(sig, 1, &y, 0, context)
+			if check.Types != nil {
+				check.recordBuiltinType(call.Fun, sig)
+			}
+		} else {
+			x.mode = novalue
+			if check.Types != nil {
+				check.recordBuiltinType(call.Fun, makeSig(nil, c))
+			}
 		}
 
 	case _Complex:

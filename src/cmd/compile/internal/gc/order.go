@@ -700,8 +700,7 @@ func (o *Order) stmt(n *Node) {
 		o.out = append(o.out, n)
 		o.cleanTemp(t)
 
-	case OCLOSE,
-		OCOPY,
+	case OCOPY,
 		OPRINT,
 		OPRINTN,
 		ORECOVER,
@@ -998,6 +997,20 @@ func (o *Order) stmt(n *Node) {
 			n.Right = o.copyExpr(n.Right, n.Right.Type, false)
 		} else {
 			n.Right = o.addrTemp(n.Right)
+		}
+		o.out = append(o.out, n)
+		o.cleanTemp(t)
+
+	case OCLOSE:
+		t := o.markTemp()
+		n.Left = o.expr(n.Left, nil)
+		n.Right = o.expr(n.Right, nil)
+		if n.Right != nil {
+			if instrumenting {
+				n.Right = o.copyExpr(n.Right, n.Right.Type, false)
+			} else {
+				n.Right = o.addrTemp(n.Right)
+			}
 		}
 		o.out = append(o.out, n)
 		o.cleanTemp(t)

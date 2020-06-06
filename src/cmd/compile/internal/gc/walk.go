@@ -1177,10 +1177,24 @@ opswitch:
 
 		// cannot use chanfn - closechan takes any, not chan any
 	case OCLOSE:
-		fn := syslook("closechan")
+		n1 := n.Right
+		if n1 == nil {
+			fn := syslook("closechan")
+			fn = substArgTypes(fn, n.Left.Type)
 
-		fn = substArgTypes(fn, n.Left.Type)
-		n = mkcall1(fn, nil, init, n.Left)
+			n = mkcall1(fn, nil, init, n.Left)
+		} else {
+			n1 = assignconv(n1, n.Left.Type.Elem(), "close")
+			n1 = walkexpr(n1, init)
+			t := n1.Type
+			n1 = nod(OADDR, n1, nil)
+			n1.Type = types.NewPtr(t)
+
+			fn := syslook("closechanwith")
+			fn = substArgTypes(fn, n.Left.Type, n.Left.Type.Elem())
+
+			n = mkcall1(fn, nil, init, n.Left, n1)
+		}
 
 	case OMAKECHAN:
 		// When size fits into int, use makechan instead of

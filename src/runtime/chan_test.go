@@ -197,6 +197,31 @@ func TestChan(t *testing.T) {
 			}
 		}
 
+		{
+			// Test close with value
+			c := make(chan int)
+			V := 42
+			go close(c, V)
+
+			const P = 4
+			const L = 1000
+
+			var wg sync.WaitGroup
+			wg.Add(P)
+			for p := 0; p < P; p++ {
+				go func() {
+					defer wg.Done()
+					for i := 0; i < L; i++ {
+						v := <-c
+						if v != V {
+							t.Fatalf("chan close: received %v value, expected %v", v, V)
+						}
+					}
+				}()
+			}
+			wg.Wait()
+		}
+
 	}
 }
 
@@ -1130,6 +1155,20 @@ func BenchmarkChanPopular(b *testing.B) {
 func BenchmarkChanClosed(b *testing.B) {
 	c := make(chan struct{})
 	close(c)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			select {
+			case <-c:
+			default:
+				b.Error("Unreachable")
+			}
+		}
+	})
+}
+
+func BenchmarkChanClosedWithValue(b *testing.B) {
+	c := make(chan int)
+	close(c, 42)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			select {

@@ -145,7 +145,7 @@ var predeclaredFuncs = [...]struct {
 }{
 	_Append:  {"append", 1, true, expression},
 	_Cap:     {"cap", 1, false, expression},
-	_Close:   {"close", 1, false, statement},
+	_Close:   {"close", 1, true, statement},
 	_Complex: {"complex", 2, false, expression},
 	_Copy:    {"copy", 2, false, statement},
 	_Delete:  {"delete", 2, false, statement},

@@ -151,6 +151,7 @@ func chanrecv1(hchan <-chan any, elem *any)
 func chanrecv2(hchan <-chan any, elem *any) bool
 func chansend1(hchan chan<- any, elem *any)
 func closechan(hchan any)
+func closechanwith(hchan any, elem *any)
 
 var writeBarrier struct {
 	enabled bool

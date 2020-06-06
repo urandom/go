@@ -143,10 +143,12 @@ func close1() {
 	var c chan int
 	var r <-chan int
 	close() // ERROR not enough arguments
-	close(1, 2) // ERROR too many arguments
+	close(1 /* ERROR invalid argument */, 2)
+	close /* ERROR too many arguments */ (c, 2, 3)
 	close(42 /* ERROR not a channel */)
 	close(r /* ERROR receive-only channel */)
 	close(c)
+	close(c, 42)
 	_ = close /* ERROR used as value */ (c)
 
 	var s []chan int
@@ -156,9 +158,11 @@ func close1() {
 func close2() {
 	f1 := func() (ch chan int) { return }
 	f2 := func() (ch chan int, x int) { return }
+	f3 := func() (ch chan int, x int, y string) { return }
 	close(f0 /* ERROR used as value */ ())
 	close(f1())
-	close(f2()) // ERROR too many arguments
+	close(f2())
+	close /* ERROR too many arguments */ (f3())
 }
 
 func complex1() {
