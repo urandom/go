@@ -96,6 +96,9 @@ func makechan(t *chantype, size int) *hchan {
 		c = (*hchan)(mallocgc(hchanSize, nil, true))
 		// Race detector uses this location for synchronization.
 		c.buf = c.raceaddr()
+		if elem.size != 0 {
+			c.closedata = mallocgc(elem.size, elem, true)
+		}
 	case elem.ptrdata == 0:
 		// Elements do not contain pointers.
 		// Allocate hchan, buf and close data in one call.
@@ -106,6 +109,7 @@ func makechan(t *chantype, size int) *hchan {
 		// Elements contain pointers.
 		c = new(hchan)
 		c.buf = mallocgc(mem, elem, true)
+		c.closedata = mallocgc(elem.size, elem, true)
 	}
 
 	c.elemsize = uint16(elem.size)
@@ -373,7 +377,9 @@ func closechanwith(c *hchan, elem unsafe.Pointer) {
 	}
 
 	c.closed = 1
-	c.closedata = elem
+	if elem != nil {
+		typedmemmove(c.elemtype, c.closedata, elem)
+	}
 
 	var glist gList
 
@@ -384,11 +390,7 @@ func closechanwith(c *hchan, elem unsafe.Pointer) {
 			break
 		}
 		if sg.elem != nil {
-			if elem == nil {
-				typedmemclr(c.elemtype, sg.elem)
-			} else {
-				typedmemmove(c.elemtype, sg.elem, c.closedata)
-			}
+			typedmemmove(c.elemtype, sg.elem, c.closedata)
 			sg.elem = nil
 		}
 		if sg.releasetime != 0 {
@@ -500,11 +502,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 				raceacquire(c.raceaddr())
 			}
 			if ep != nil {
-				if c.closedata == nil {
-					typedmemclr(c.elemtype, ep)
-				} else {
-					typedmemmove(c.elemtype, ep, c.closedata)
-				}
+				typedmemmove(c.elemtype, ep, c.closedata)
 			}
 			return true, false
 		}
@@ -523,11 +521,7 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 		}
 		unlock(&c.lock)
 		if ep != nil {
-			if c.closedata == nil {
-				typedmemclr(c.elemtype, ep)
-			} else {
-				typedmemmove(c.elemtype, ep, c.closedata)
-			}
+			typedmemmove(c.elemtype, ep, c.closedata)
 		}
 		return true, false
 	}
