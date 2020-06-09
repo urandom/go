@@ -98,9 +98,10 @@ func makechan(t *chantype, size int) *hchan {
 		c.buf = c.raceaddr()
 	case elem.ptrdata == 0:
 		// Elements do not contain pointers.
-		// Allocate hchan and buf in one call.
-		c = (*hchan)(mallocgc(hchanSize+mem, nil, true))
+		// Allocate hchan, buf and close data in one call.
+		c = (*hchan)(mallocgc(hchanSize+mem+elem.size, nil, true))
 		c.buf = add(unsafe.Pointer(c), hchanSize)
+		c.closedata = add(c.buf, mem)
 	default:
 		// Elements contain pointers.
 		c = new(hchan)
